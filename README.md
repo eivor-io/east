@@ -36,4 +36,4 @@ hooks:
     - ~/.local/.bins/east-postinstall
 ```
 
-All set. Just run `east sync ./eastconf.yaml` and EAST will generate a link that contains a shell script that can be used to install your full configuration on any distribution.
+All set. Just run `east sync ./eastconf.yaml` and EAST will generate a link to a shell script that can be used to install your full configuration on any distribution.

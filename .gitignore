@@ -143,14 +143,11 @@ dmypy.json
 .pyre/
 
 ### VisualStudioCode ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
 
 # End of https://www.gitignore.io/api/linux,python,visualstudiocode
+Pipfile.lock
