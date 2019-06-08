@@ -6,9 +6,11 @@ verify_ssl = true
 [dev-packages]
 pylint = "*"
 autopep8 = "*"
+rope = "*"
 
 [packages]
 cliff = "*"
+east = {editable = true,path = "."}
 
 [requires]
 python_version = "3"

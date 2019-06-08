@@ -37,3 +37,11 @@ hooks:
 ```
 
 All set. Just run `east sync ./eastconf.yaml` and EAST will generate a link to a shell script that can be used to install your full configuration on any distribution.
+
+---
+
+## TODO list
+
+- *The current version of EAST supports only Arch* : I'm trying to add support for Ubuntu using `launchpadlib`, but for now, it's a case for contributions welcome.
+
+- *Better CLI Experience*: Improved logging, colors, and error handling.
