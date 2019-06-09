@@ -2,6 +2,8 @@ import glob
 import os
 import shutil
 
+import errno
+
 from datetime import datetime
 
 from cliff.command import Command
@@ -109,9 +111,16 @@ class SyncCommand(Command):
         home_dir = os.path.expanduser("~")
         for glob_match in glob.glob(src):
             subdir = glob_match.replace(home_dir, "")
-            dst_dir = f"{dst}/._home/{subdir}"
+            dst_dir = f"{dst}/._home{subdir}"
             if os.path.isfile(glob_match):
-                shutil.copy2(glob_match, dst_dir)
+                try:
+                    shutil.copy2(glob_match, dst_dir)
+                except IOError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
+                    # try creating parent directories
+                    os.makedirs(os.path.dirname(dst_dir))
+                    shutil.copy2(glob_match, dst_dir)
             else:
                 shutil.copytree(glob_match, dst_dir)
 
