@@ -47,4 +47,5 @@ done
 {% endif %}
 
 echo "Copying user configuration"
-cp -r $EAST_DIR/._home/ $HOME/
+cd $EAST_DIR/._home
+cp -r ./ $HOME
