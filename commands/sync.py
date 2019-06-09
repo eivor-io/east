@@ -7,7 +7,7 @@ from datetime import datetime
 from cliff.command import Command
 
 from config.yaml_config import YamlConfig
-from config.script_generator import InstallationScriptGenerator
+from config.template_config import EastTemplateGenerator
 from subproc.os_porocess import SubprocessHandler
 
 
@@ -73,15 +73,23 @@ class SyncCommand(Command):
 
         print("Generating installation script...")
         packages = east_config.get_package_list()
-        installer = InstallationScriptGenerator(packages)
+        installer = EastTemplateGenerator(
+            packages,
+            presync_hooks,
+            postsync_hooks)
 
         with open(f"{east_repo_dir}/install.sh", "w") as install_file:
-            install_file.write(installer.generate_script())
+            install_file.write(installer.generate_installation_script())
+
+        # Generate README
+        with open(f"{east_repo_dir}/README.md", "w") as readme_file:
+            readme_file.write(installer.generate_readme())
 
         print("Pushing changes...")
+        os.chdir(east_repo_dir)
         SubprocessHandler.execute_command(["git", "add", "."])
         SubprocessHandler.execute_command(
-            ["git", "commit", "-m", f'"Config: {datetime.now()}"'])
+            ["git", "commit", "-m", f"Config: {datetime.now()}"])
         SubprocessHandler.execute_command(["git", "push"])
 
         print("Cleaning up...")
