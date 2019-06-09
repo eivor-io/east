@@ -13,30 +13,84 @@ EAST can be used to bootstrap the installation of the packages you need and the 
 
 ## Usage
 
-EAST is configred using a YAML file. This file has all the information about what packages should be installed, what configuration files should be synced, and what post-installation scripts it should execute if required.
+EAST is configred using a YAML file. This file has all the information about what packages should be installed, what configuration files should be synced, and what pre/post-installation scripts it should execute if required.
 
-eastconf.yaml:
+My config file looks like this:
 
-```yml
+```yaml
 packages:
+  - wget
+  - vim
+  - xorg-server
+  - xorg-server-common
+  - xorg-xinit
+  - xcompmgr
+  - python-pip
   - lightdm
+  - lightdm-gtk-greeter
   - lightdm-gtk-greeter-settings
+  - pulseaudio
+  - pulsemixer
   - i3-gaps
   - i3blocks
+  - openssh
+  - cronie
+  - bash-completion
+  - neomutt
+  - nitrogen
+  - linux-headers
+  - xfce4-terminal
+  - firefox
+  - scrot
+  - dunst
 
 config:
-  - ~/.zshrc
+  - ~/.config/dconf
+  - ~/.config/dunst
+  - ~/.config/fontconfig
+  - ~/.config/gtk*
+  - ~/.config/i3*
+  - ~/.local/bin/*
+  - ~/.themes
+  - ~/.icons
+  - ~/.bashrc
+  - ~/.profile
   - ~/.xsession
-  - ~/.local/bin
-  - ~/.config/i3
+  - ~/.Xresources
 
 hooks:
   presync:
+    - ~/.east/east-presync.sh
   postsync:
-    - ~/.local/.bins/east-postinstall
+    - ~/.east/east-postsync.sh
 ```
 
-All set. Just run `east sync ./eastconf.yaml` and EAST will generate a link to a shell script that can be used to install your full configuration on any distribution.
+### Syncing
+
+For now, EAST syncs to a Git repository. You can either specify the target repo by using the `-r your_repo_url` switch, or by adding the following content to your EAST config file.
+
+```yaml
+east_repo:
+  your_repo_url
+```
+
+Then, to sync:
+
+```shell
+# Syncing with -r switch
+$ east sync ./eastconf.yaml -r your_repo_url
+
+# Syncing with repo in EAST conf
+$ east sync ./eastconf.yaml
+```
+
+### Installing generated config
+EAST will generate an installer script that you can execute to install your config on any system in one go.
+Just clone the repo and:
+
+```shell
+$ chmod +x ./install.sh && ./install.sh
+```
 
 ---
 
