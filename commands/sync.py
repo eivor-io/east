@@ -51,6 +51,7 @@ class SyncCommand(Command):
 
             # FIXME Should be a clean way of doing this.
             if file != ".git":
+                print(f"\t == {file}")
                 os.remove(_f) if os.path.isfile(_f) else shutil.rmtree(_f)
 
         presync_hooks = east_config.get_presync_hooks()
@@ -59,6 +60,7 @@ class SyncCommand(Command):
         print("Copying user configuration...")
         config_files = east_config.get_config_files()
         for _f in config_files:
+            print(f"\t == {_f}")
             conf_file = os.path.expanduser(_f)
             self._copy_config_files(conf_file, east_repo_dir)
         print("Done.")
@@ -81,7 +83,7 @@ class SyncCommand(Command):
         with open(f"{east_repo_dir}/install.sh", "w") as install_file:
             install_file.write(installer.generate_installation_script())
 
-        # Generate README
+        print("Generating README")
         with open(f"{east_repo_dir}/README.md", "w") as readme_file:
             readme_file.write(installer.generate_readme())
 
@@ -103,14 +105,15 @@ class SyncCommand(Command):
             shutil.rmtree(directory)
 
     def _copy_config_files(self, src, dst):
+        # FIXME WTF BUCK!
+        home_dir = os.path.expanduser("~")
         for glob_match in glob.glob(src):
+            subdir = glob_match.replace(home_dir, "")
+            dst_dir = f"{dst}/._home/{subdir}"
             if os.path.isfile(glob_match):
-                shutil.copy2(glob_match, dst)
+                shutil.copy2(glob_match, dst_dir)
             else:
-                # FIXME WTF BUCK!
-                home_dir = os.path.expanduser("~")
-                subdir = glob_match.replace(home_dir, "")
-                shutil.copytree(glob_match, f"{dst}/._home/{subdir}")
+                shutil.copytree(glob_match, dst_dir)
 
     def _copy_files(self, src, dst):
         os.makedirs(dst)
