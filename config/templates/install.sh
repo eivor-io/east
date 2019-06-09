@@ -30,9 +30,7 @@ for f in *.sh; do
 done
 
 echo "Installing packages..."
-for i in "${arr[@]}"; do
-    sudo pacman -Sy ${i}
-done
+sudo pacman -Sy ${packages[@]}
 
 echo "Executing post-sync scripts (if any)..."
 cd $EAST_DIR/._postsync
