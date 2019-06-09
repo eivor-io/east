@@ -1,5 +1,4 @@
 import os
-
 import yaml
 
 
@@ -24,6 +23,18 @@ class YamlConfig:
                 print(err)
                 exit(1)
 
+    def get_package_list(self) -> list:
+        if not "packages" in self._config:
+            return []
+
+        return self._config["packages"]
+
+    def get_config_files(self) -> list:
+        if not "config" in self._config:
+            return []
+
+        return self._config["config"]
+
     def get_east_repo(self) -> str:
         if not "east_repo" in self._config:
             return None
@@ -40,3 +51,14 @@ class YamlConfig:
             return []
 
         return hooks["presync"]
+
+    def get_postsync_hooks(self) -> list:
+        if not "hooks" in self._config:
+            return []
+
+        hooks = self._config["hooks"]
+
+        if not "postsync" in hooks:
+            return []
+
+        return hooks["postsync"]

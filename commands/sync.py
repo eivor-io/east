@@ -1,8 +1,14 @@
+import glob
 import os
-from cliff.command import Command
-from subproc.os_porocess import SubprocessHandler
-from config.yaml_config import YamlConfig
 import shutil
+
+from datetime import datetime
+
+from cliff.command import Command
+
+from config.yaml_config import YamlConfig
+from config.script_generator import InstallationScriptGenerator
+from subproc.os_porocess import SubprocessHandler
 
 
 class SyncCommand(Command):
@@ -29,17 +35,54 @@ class SyncCommand(Command):
             print("Cannot find a Git repo URL in configuration.")
             exit(1)
 
-        east_workdir = "._east"
+        east_workdir = "/tmp/._east"
         if not os.path.exists(east_workdir):
             os.makedirs(east_workdir)
 
-        self._clone_git_repo(repo_url, f"{east_workdir}/repo")
+        east_repo_dir = f"{east_workdir}/repo"
+        if os.path.exists(east_repo_dir):
+            shutil.rmtree(east_repo_dir)
+
+        self._clone_git_repo(repo_url, east_repo_dir)
+
+        print("Cleaning up cloned repo, just in case...")
+        for file in os.listdir(east_repo_dir):
+            _f = f"{east_repo_dir}/{file}"
+
+            # FIXME Should be a clean way of doing this.
+            if file != ".git":
+                os.remove(_f) if os.path.isfile(_f) else shutil.rmtree(_f)
 
         presync_hooks = east_config.get_presync_hooks()
+        postsync_hooks = east_config.get_postsync_hooks()
+
+        print("Copying user configuration...")
+        config_files = east_config.get_config_files()
+        for _f in config_files:
+            conf_file = os.path.expanduser(_f)
+            self._copy_config_files(conf_file, east_repo_dir)
+        print("Done.")
+
         if len(presync_hooks) > 0:
-            print(f"Executing presync scripts...")
-            self._execute_scripts(presync_hooks)
-            print("Done.")
+            presync_hook_dir = f"{east_repo_dir}/._presync"
+            self._copy_files(presync_hooks, presync_hook_dir)
+
+        if len(postsync_hooks) > 0:
+            postsync_hook_dir = f"{east_repo_dir}/._postsync"
+            self._copy_files(postsync_hooks, postsync_hook_dir)
+
+        print("Generating installation script...")
+        packages = east_config.get_package_list()
+        installer = InstallationScriptGenerator(packages)
+
+        with open(f"{east_repo_dir}/install.sh", "w") as install_file:
+            install_file.write(installer.generate_script())
+
+        print("Pushing changes...")
+        SubprocessHandler.execute_command(["git", "add", "."])
+        SubprocessHandler.execute_command(
+            ["git", "commit", "-m", f'"Config: {datetime.now()}"'])
+        SubprocessHandler.execute_command(["git", "push"])
 
         print("Cleaning up...")
         shutil.rmtree(east_workdir)
@@ -48,15 +91,20 @@ class SyncCommand(Command):
         git_clone_args = ["git", "clone", repo, directory]
         return_code = SubprocessHandler.execute_command(git_clone_args)
         if return_code != 0:
-            print("Git clone failed")
+            print("Git clone failed!!")
             shutil.rmtree(directory)
 
-    def _execute_scripts(self, hooks: list):
-        for hook in hooks:
-            script_file = os.path.expanduser(hook)
+    def _copy_config_files(self, src, dst):
+        for glob_match in glob.glob(src):
+            if os.path.isfile(glob_match):
+                shutil.copy2(glob_match, dst)
+            else:
+                # FIXME WTF BUCK!
+                home_dir = os.path.expanduser("~")
+                subdir = glob_match.replace(home_dir, "")
+                shutil.copytree(glob_match, f"{dst}/._home/{subdir}")
 
-            print(f"====== {hook}")
-            return_code = SubprocessHandler.execute_command([script_file])
-            if return_code != 0:
-                print(f"The hook {hook} did not finish successfully.")
-                exit(return_code)
+    def _copy_files(self, src, dst):
+        os.makedirs(dst)
+        for file in src:
+            shutil.copy2(os.path.expanduser(file), dst)

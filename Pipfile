@@ -11,6 +11,7 @@ rope = "*"
 [packages]
 cliff = "*"
 east = {editable = true,path = "."}
+jinja2 = "*"
 
 [requires]
 python_version = "3"
