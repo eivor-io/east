@@ -3,15 +3,12 @@
 To install, just clone this repo and then:
 
 ```shell
-$ chmod +x ./install.sh
-$ ./install.sh
+$ chmod +x ./install.sh && ./install.sh
 ```
 
 ## Packages
-
 {% for package in packages %}
-- {{ package }}
-{% endfor %}
+- {{ package }}{% endfor %}
 
 ---
 

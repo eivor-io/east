@@ -1,15 +1,13 @@
+import errno
 import glob
 import os
 import shutil
-
-import errno
-
 from datetime import datetime
 
 from cliff.command import Command
 
-from config.yaml_config import YamlConfig
 from config.template_config import EastTemplateGenerator
+from config.yaml_config import YamlConfig
 from subproc.os_porocess import SubprocessHandler
 
 
