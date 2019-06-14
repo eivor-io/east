@@ -1,12 +1,11 @@
 #!/bin/bash
 
-if [ "$EUID" -eq 0 ]; then
-    echo "Please avoid running this script as root."
+if [ "$EUID" -ne 0 ]; then
+    echo "This script should be run as root."
     exit 1
 fi
 
 ## Functions
-
 function os_version() {
     if [ -f /etc/os-release ]; then
         # freedesktop.org and systemd
@@ -41,58 +40,61 @@ function os_version() {
     echo "$OS"
 }
 
-function system_update_pacman() {
-    pacman -Syyu
-}
+{% include 'larbs_functions.sh' %}
 
-function system_update_xbps() {
-    xbps-install -Su
-}
-
+## Used by archlinux.
 function install_packages_pacman() {
-    pacman -Sy $@
+    pacman --noconfirm -S $@
 }
 
 function install_packages_xbps() {
-    xbps-install -S $@
+    xbps-install -Syf $@
 }
 
 export OS=$(os_version)
 export PACKAGECTL=""
 case $OS in
-    "arch" | "manjaro") PACKAGECTL="pacman" ;;
-    "void") PACKAGECTL="xbps" ;;
-    *) 
+    "arch" | "manjaro") 
+        PACKAGECTL="pacman" 
+        pacman -S --noconfirm --needed dialog ;;
+    "void") 
+        PACKAGECTL="xbps" 
+        xbps-install -Syf dialog ;;
+    *)
         echo "Only Arch and Voidlinux are supported"
         echo "Visit https://eivor.xyz/east to request support" ;;
 esac
 
-echo "Running as user: $USER."
-echo "Detected OS: $OS"
-read -p "Perform installation? " -n 1 -r
-echo    # (optional) move to a new line
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
-fi
-echo "======================================="
-
 export EAST_DIR=$( cd "$(dirname "$0")" ; pwd -P )
+
+dialog --title "EAST Installation Script" --msgbox "Installing for OS ${OS}\\n\\nBase directory: ${EAST_DIR}" 10 60
+
+getuserandpass || error "Cannot get username and password."
+
+usercheck || error "Cannot check for $name's validatity"
+
+preinstallmsg || error "User exited."
+
+adduserandpass || error "Error adding username and/or password."
+
+export EAST_USER="$name"
+export home="/home/$EAST_USER"
+export deu="sudo -u $EAST_USER"
 
 declare -a packages=({% for package in packages %}
                         "{{ package }}"{% endfor %}
                     )
 
 echo "Performing a system udpate."
-sudo bash -c "$(declare -f system_update_${PACKAGECTL}); system_update_${PACKAGECTL}"
+system_update_${PACKAGECTL}
 
 {% if presync|length > 0 %}
 echo "Executing {{presync|length}} pre-sync scripts..."
 cd $EAST_DIR/._presync
 (
     for f in *.sh; do
-      echo ">>> $f"
-      bash "$f" -H || exit $?
+        echo ">>> $f"
+        bash "$f" -H || exit $?
     done
 )
 
@@ -103,15 +105,15 @@ fi
 {% endif %}
 
 echo "Installing packages..."
-sudo bash -c "$(declare -f install_packages_${PACKAGECTL}); install_packages_${PACKAGECTL} ${packages[@]}"
+install_packages_${PACKAGECTL} ${packages[@]}
 
 {% if postsync|length > 0 %}
 echo "Executing {{postsync|length}} post-sync scripts..."
 cd $EAST_DIR/._postsync
 (
     for f in *.sh; do
-      echo ">>> $f"
-      bash "$f" -H || exit $?
+        echo ">>> $f"
+        bash "$f" -H || exit $?
     done
 )
 
@@ -121,6 +123,4 @@ if [[ "$?" -ne 0 ]]; then
 fi
 {% endif %}
 
-echo "Copying user configuration"
-cd $EAST_DIR/._home
-cp -r ./ $HOME
+putfiles "$EAST_DIR/._home" "/home/$name"
