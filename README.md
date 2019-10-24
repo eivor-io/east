@@ -94,7 +94,7 @@ $ chmod +x ./install.sh && ./install.sh
 
 ---
 
-## TODO list
+## TODOs list
 
 - *The current version of EAST supports only Arch* : I'm trying to add support for Ubuntu using `launchpadlib`, but for now, it's a case for contributions welcome.
 
